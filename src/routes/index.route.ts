@@ -1,9 +1,8 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import authRoutes from "./auth.route";
 
 const router = Router();
 
-router.get("/ping", (req: Request, res: Response) => {
-  res.json({ message: "poasng" });
-});
+router.use("/auth", authRoutes);
 
 export default router;
