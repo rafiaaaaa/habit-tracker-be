@@ -22,11 +22,13 @@ app.use(cookieParser());
 
 connectDB();
 
+app.set("trust proxy", 1);
+
 app.get("/", (req: Request, res: Response) => {
   res.send("API is Running!");
 });
 
-app.use("/", indexRouter);
+app.use("/api", indexRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
