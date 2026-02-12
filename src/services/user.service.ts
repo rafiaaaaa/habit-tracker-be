@@ -15,7 +15,6 @@ export const registerUserService = async (
   });
 
   if (existsUser) throw new Error("User already exists");
-
   const password = await bcrypt.hash(data.password, 10);
 
   const user = await User.create({
@@ -42,21 +41,18 @@ export const loginUserService = async (
   const isPasswordValid = await bcrypt.compare(data.password, user.password);
   if (!isPasswordValid) throw new Error("Invalid password");
 
-  const accessToken = await jwt.sign(
-    {
-      exp: Math.floor(Date.now() / 1000) + 60 * 60,
-      data: user,
-    },
-    JWT_SECRET,
-  );
+  const payload = {
+    userId: user._id,
+    email: user.email,
+  };
 
-  const refreshToken = await jwt.sign(
-    {
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
-      data: user,
-    },
-    JWT_SECRET,
-  );
+  const accessToken = jwt.sign(payload, JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  const refreshToken = jwt.sign(payload, JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
   const { password, ...safeUser } = user.toObject();
 
