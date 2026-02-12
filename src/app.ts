@@ -6,6 +6,7 @@ import indexRouter from "./routes/index.route";
 import connectDB from "./config/db";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { errorHandler } from "./middleware/error.middleware";
 
 const app = express();
 
@@ -27,9 +28,9 @@ app.set("trust proxy", 1);
 app.get("/", (req: Request, res: Response) => {
   res.send("API is Running!");
 });
-
 app.use("/api", indexRouter);
 
+app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
