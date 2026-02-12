@@ -20,6 +20,7 @@ export const registerUserService = async (
   const user = await User.create({
     ...data,
     password,
+    timezone: data.timezone,
   });
   return user;
 };
@@ -40,6 +41,11 @@ export const loginUserService = async (
 
   const isPasswordValid = await bcrypt.compare(data.password, user.password);
   if (!isPasswordValid) throw new Error("Invalid password");
+
+  if (user.timezone !== data.timezone) {
+    user.timezone = data.timezone;
+    await user.save();
+  }
 
   const payload = {
     userId: user._id,
