@@ -54,3 +54,11 @@ export async function toggleTodayHabitService(
 
   return "created";
 }
+
+export const getAllHabitsService = async (
+  userId: string,
+): Promise<IHabit[]> => {
+  const habits = await Habit.find({ user: userId });
+  
+  return habits;
+};

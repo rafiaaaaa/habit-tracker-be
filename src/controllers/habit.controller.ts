@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   addHabitService,
+  getAllHabitsService,
   toggleTodayHabitService,
 } from "../services/habit.service";
 import { AppError } from "../utils/AppError";
@@ -26,4 +27,12 @@ export const toggleHabitController = async (req: Request, res: Response) => {
   if (!status) throw new AppError("Something went wrong", 400);
 
   return res.status(200).json({ success: true, data: status });
+};
+
+export const getHabitsController = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+
+  const habits = await getAllHabitsService(userId);
+
+  return res.status(200).json({ success: true, data: habits });
 };

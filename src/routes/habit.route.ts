@@ -4,11 +4,13 @@ import { validate } from "../middleware/validate.middleware";
 import { addHabitValidationSchema } from "../validations/habit.validation";
 import {
   createHabitController,
+  getHabitsController,
   toggleHabitController,
 } from "../controllers/habit.controller";
 
 const router = Router();
 
+router.get("/", authMiddleware, getHabitsController);
 router.post(
   "/",
   authMiddleware,
