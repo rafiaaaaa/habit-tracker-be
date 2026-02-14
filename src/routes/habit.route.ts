@@ -2,7 +2,10 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate.middleware";
 import { addHabitValidationSchema } from "../validations/habit.validation";
-import { createHabitController } from "../controllers/habit.controller";
+import {
+  createHabitController,
+  toggleHabitController,
+} from "../controllers/habit.controller";
 
 const router = Router();
 
@@ -12,5 +15,6 @@ router.post(
   validate(addHabitValidationSchema),
   createHabitController,
 );
+router.put("/:habitId", authMiddleware, toggleHabitController);
 
 export default router;

@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
-import { addHabitService } from "../services/habit.service";
+import {
+  addHabitService,
+  toggleTodayHabitService,
+} from "../services/habit.service";
 import { AppError } from "../utils/AppError";
 
 export const createHabitController = async (req: Request, res: Response) => {
@@ -12,4 +15,15 @@ export const createHabitController = async (req: Request, res: Response) => {
     success: true,
     data: habit,
   });
+};
+
+export const toggleHabitController = async (req: Request, res: Response) => {
+  const { habitId } = req.params;
+  if (!habitId) throw new AppError("Habit id is required", 400);
+
+  const userId = req.user!.id;
+  const status = await toggleTodayHabitService(habitId as string, userId);
+  if (!status) throw new AppError("Something went wrong", 400);
+
+  return res.status(200).json({ success: true, data: status });
 };

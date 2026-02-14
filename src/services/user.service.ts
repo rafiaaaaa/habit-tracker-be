@@ -43,7 +43,7 @@ export const loginUserService = async (
   if (!isPasswordValid) throw new Error("Invalid password");
 
   if (user.timezone !== data.timezone) {
-    user.timezone = data.timezone;
+    user.timezone = data.timezone ?? "UTC";
     await user.save();
   }
 
