@@ -5,6 +5,6 @@ import habitRoutes from "./habit.route";
 const router = Router();
 
 router.use("/auth", authRoutes);
-router.use("/habit", habitRoutes);
+router.use("/habits", habitRoutes);
 
 export default router;

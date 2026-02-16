@@ -9,6 +9,7 @@ export interface IHabit extends Document {
   lastCompleted?: Date;
   frequency: "DAILY" | "WEEKLY" | "CUSTOM";
   color?: string;
+  habitRecords?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,5 +31,14 @@ const HabitSchema = new Schema<IHabit>(
   },
   { timestamps: true },
 );
+
+HabitSchema.virtual("habitRecords", {
+  ref: "HabitRecord",
+  localField: "_id",
+  foreignField: "habit",
+});
+
+HabitSchema.set("toJSON", { virtuals: true });
+HabitSchema.set("toObject", { virtuals: true });
 
 export default model<IHabit>("Habit", HabitSchema);
