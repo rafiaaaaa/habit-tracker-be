@@ -7,6 +7,7 @@ import connectDB from "./config/db";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { errorHandler } from "./middleware/error.middleware";
+import morgan from "morgan";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cookieParser());
+app.use(morgan("dev"));
 
 connectDB();
 
