@@ -1,4 +1,4 @@
-import { Document, Schema, Types } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 
 export interface ISubscription extends Document {
   user: Types.ObjectId;
@@ -20,3 +20,5 @@ export const SubscriptionSchema = new Schema<ISubscription>(
     timestamps: true,
   },
 );
+
+export default model<ISubscription>("Subscription", SubscriptionSchema);
