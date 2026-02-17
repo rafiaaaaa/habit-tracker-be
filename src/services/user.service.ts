@@ -1,4 +1,6 @@
+import Subscription from "../models/Subscription";
 import User, { IUser } from "../models/User";
+import { AppError } from "../utils/AppError";
 import {
   loginUserRequest,
   registerUserRequest,
@@ -73,4 +75,46 @@ export const loginUserService = async (
 
 export const getAllUsers = async (): Promise<IUser[]> => {
   return User.find();
+};
+
+export const getMeService = async (userId: string): Promise<IUser> => {
+  const user = await User.findById(userId)
+    .select({
+      name: 1,
+      email: 1,
+      timezone: 1,
+    })
+    .populate("subscription", "plan endDate -user -_id");
+
+  if (!user) throw new AppError("User not found", 404);
+
+  const today = new Date();
+  if (
+    user.subscription &&
+    user.subscription.plan !== "free" &&
+    user.subscription.endDate &&
+    user.subscription.endDate < today
+  ) {
+    await Subscription.updateOne(
+      { user: userId },
+      { plan: "free", status: "expired" },
+    );
+    user.subscription.plan = "free";
+  }
+
+  if (!user.subscription) {
+    await Subscription.create({
+      user: userId,
+      plan: "free",
+      status: "active",
+      startDate: new Date(),
+    });
+
+    await user.populate({
+      path: "subscription",
+      select: "plan endDate -user -_id",
+    });
+  }
+
+  return user;
 };

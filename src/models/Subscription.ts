@@ -10,8 +10,18 @@ export interface ISubscription extends Document {
 
 export const SubscriptionSchema = new Schema<ISubscription>(
   {
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    plan: { type: String, enum: ["free", "pro"], required: true },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      unique: true,
+      required: true,
+      index: true,
+    },
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      required: true,
+    },
     status: { type: String, required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date },

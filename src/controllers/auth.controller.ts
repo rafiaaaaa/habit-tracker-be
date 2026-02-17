@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  getMeService,
   loginUserService,
   registerUserService,
 } from "../services/user.service";
@@ -36,4 +37,10 @@ export const loginUser = async (req: Request, res: Response) => {
     success: true,
     data,
   });
+};
+
+export const me = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const user = await getMeService(userId);
+  return res.status(200).json({ success: true, data: user });
 };
