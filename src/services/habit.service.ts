@@ -102,3 +102,15 @@ export const getAllHabitsService = async (userId: string) => {
   });
   return newHabits;
 };
+
+export const deleteHabitService = async (habitId: string, userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  const habit = await Habit.findOne({ _id: habitId, user: userId });
+  if (!habit) throw new AppError("Habit not found for this user", 404);
+
+  await habit.deleteOne();
+
+  return true;
+};

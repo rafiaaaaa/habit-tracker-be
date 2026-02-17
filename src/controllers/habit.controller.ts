@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   addHabitService,
+  deleteHabitService,
   getAllHabitsService,
   toggleTodayHabitService,
 } from "../services/habit.service";
@@ -35,4 +36,15 @@ export const getHabitsController = async (req: Request, res: Response) => {
   const habits = await getAllHabitsService(userId);
 
   return res.status(200).json({ success: true, data: habits });
+};
+
+export const deleteHabitController = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const habitId = req.params.habitId as string;
+  if (!habitId) throw new AppError("Habit id is required", 400);
+
+  const deleted = await deleteHabitService(habitId, userId);
+  if (!deleted) throw new AppError("Something went wrong", 400);
+
+  return res.status(200).json({ success: true, data: deleted });
 };

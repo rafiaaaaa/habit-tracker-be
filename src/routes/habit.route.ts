@@ -4,6 +4,7 @@ import { validate } from "../middleware/validate.middleware";
 import { addHabitValidationSchema } from "../validations/habit.validation";
 import {
   createHabitController,
+  deleteHabitController,
   getHabitsController,
   toggleHabitController,
 } from "../controllers/habit.controller";
@@ -18,5 +19,6 @@ router.post(
   createHabitController,
 );
 router.put("/:habitId", authMiddleware, toggleHabitController);
+router.delete("/:habitId", authMiddleware, deleteHabitController);
 
 export default router;
