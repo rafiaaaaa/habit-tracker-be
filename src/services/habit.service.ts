@@ -15,8 +15,7 @@ export async function addHabitService(
     title: payload.title,
     description: payload.description,
     frequency: payload.frequency,
-    streak: 0,
-    longestStreak: 0,
+    category: payload.category,
     color: payload.color ?? "#facc15",
   });
 

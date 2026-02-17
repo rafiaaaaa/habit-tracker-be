@@ -8,6 +8,7 @@ export interface IHabit extends Document {
   longestStreak: number;
   lastCompleted?: Date;
   frequency: "DAILY" | "WEEKLY" | "CUSTOM";
+  category: string;
   color?: string;
   habitRecords?: any[];
   createdAt: Date;
@@ -27,6 +28,7 @@ const HabitSchema = new Schema<IHabit>(
       enum: ["DAILY", "WEEKLY", "CUSTOM"],
       default: "DAILY",
     },
+    category: { type: String, required: true },
     color: { type: String },
   },
   { timestamps: true },
