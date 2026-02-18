@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { loginUser, me, registerUser } from "../controllers/auth.controller";
+import {
+  loginGoogleController,
+  loginUser,
+  me,
+  registerUser,
+} from "../controllers/auth.controller";
 import { validate } from "../middleware/validate.middleware";
 import {
   loginUserSchema,
@@ -13,4 +18,7 @@ router.post("/register", validate(registerUserSchema), registerUser);
 router.post("/login", validate(loginUserSchema), loginUser);
 router.get("/me", authMiddleware, me);
 
+router.post("/google", loginGoogleController);
+
 export default router;
+  

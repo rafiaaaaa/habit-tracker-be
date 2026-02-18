@@ -14,7 +14,7 @@ const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     timezone: { type: String, required: true, default: "UTC" },
     createdAt: { type: Date, default: Date.now },
   },
@@ -29,6 +29,12 @@ UserSchema.virtual("subscription", {
   localField: "_id",
   foreignField: "user",
   justOne: true,
+});
+
+UserSchema.virtual("oAuthUsers", {
+  ref: "OAuthUser",
+  localField: "_id",
+  foreignField: "user",
 });
 
 export default model<IUser>("User", UserSchema);

@@ -1,3 +1,4 @@
+import { OAuth2Client } from "google-auth-library";
 import Subscription from "../models/Subscription";
 import User, { IUser } from "../models/User";
 import { AppError } from "../utils/AppError";
@@ -7,6 +8,7 @@ import {
 } from "../validations/user.validation";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { OAuthUser } from "../models/OAuthUser";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 export const registerUserService = async (
@@ -16,7 +18,7 @@ export const registerUserService = async (
     email: data.email,
   });
 
-  if (existsUser) throw new Error("User already exists");
+  if (existsUser) throw new AppError("User already exists", 409);
   const password = await bcrypt.hash(data.password, 10);
 
   const user = await User.create({
@@ -39,10 +41,10 @@ export const loginUserService = async (
   const user = await User.findOne({
     email: data.email,
   });
-  if (!user) throw new Error("User not found");
+  if (!user || !user.password) throw new AppError("User not found", 404);
 
   const isPasswordValid = await bcrypt.compare(data.password, user.password);
-  if (!isPasswordValid) throw new Error("Invalid password");
+  if (!isPasswordValid) throw new AppError("Invalid password", 401);
 
   if (user.timezone !== data.timezone) {
     user.timezone = data.timezone ?? "UTC";
@@ -117,4 +119,77 @@ export const getMeService = async (userId: string): Promise<IUser> => {
   }
 
   return user;
+};
+
+export const loginGoogleService = async (idToken: string) => {
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+
+  if (!payload) {
+    throw new AppError("Invalid Google token", 401);
+  }
+
+  console.log("ini payload", payload);
+
+  const user = await User.findOneAndUpdate(
+    { email: payload.email },
+    {
+      $setOnInsert: {
+        email: payload.email,
+        name: payload.name,
+      },
+    },
+    { new: true, upsert: true },
+  );
+
+  console.log("ini user", user);
+
+  const oAuthUser = await OAuthUser.findOneAndUpdate(
+    {
+      provider: "GOOGLE",
+      providerId: payload.sub,
+    },
+    {
+      $setOnInsert: {
+        provider: "GOOGLE",
+        providerId: payload.sub,
+        user: user._id,
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+    },
+  );
+
+  console.log("ini oAuthUser", oAuthUser);
+
+  const jwtPayload = {
+    userId: user._id,
+    email: user.email,
+  };
+
+  const accessToken = jwt.sign(jwtPayload, JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  const refreshToken = jwt.sign(jwtPayload, JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  const { password, ...safeUser } = user.toObject();
+
+  return {
+    user: safeUser,
+    token: {
+      accessToken,
+      refreshToken,
+    },
+  };
 };
