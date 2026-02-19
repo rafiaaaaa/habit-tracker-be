@@ -1,3 +1,4 @@
+import { PLAN_CONFIG, PlanType } from "../config/plan";
 import Habit, { IHabit } from "../models/Habit";
 import HabitRecord, { IHabitRecord } from "../models/HabitRecord";
 import User from "../models/User";
@@ -10,6 +11,17 @@ export async function addHabitService(
   payload: AddHabitRequest,
   userId: string,
 ): Promise<IHabit> {
+  const user = await User.findById(userId).populate("subscription", "plan");
+  if (!user) throw new AppError("User not found", 404);
+
+  const userPlan =
+    (user.subscription?.plan.toUpperCase() as PlanType) || "FREE";
+  const totalHabit = await Habit.countDocuments({ user: userId });
+
+  if (totalHabit >= PLAN_CONFIG[userPlan].habit_limit) {
+    throw new AppError("Maximum habit limit reached, upgrade your plan", 409);
+  }
+
   const habit = await Habit.create({
     user: userId,
     title: payload.title,
