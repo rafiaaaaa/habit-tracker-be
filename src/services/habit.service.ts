@@ -1,3 +1,4 @@
+import { format } from "node:path";
 import { PLAN_CONFIG, PlanType } from "../config/plan";
 import Habit, { IHabit } from "../models/Habit";
 import HabitRecord, { IHabitRecord } from "../models/HabitRecord";
@@ -74,11 +75,6 @@ export const getAllHabitsService = async (userId: string) => {
 
   const habits = await Habit.find({ user: userId }).populate({
     path: "habitRecords",
-    match: {
-      date: {
-        $gte: sevenDaysAgo,
-      },
-    },
     options: { sort: { date: -1 } },
   });
 
@@ -94,7 +90,7 @@ export const getAllHabitsService = async (userId: string) => {
 
   const newHabits = habits.map((habit) => {
     const recordMap = new Map(
-      habit.habitRecords?.map((r) => {
+      habit.habitRecords?.slice(0, 7).map((r) => {
         const d = new Date(r.date);
         d.setHours(0, 0, 0, 0);
         return [formatLocalDate(d), true];
@@ -106,12 +102,15 @@ export const getAllHabitsService = async (userId: string) => {
     );
 
     const todayCompleted = record[formatLocalDate(today)];
+    const streak = calculateStreak(habit.habitRecords || []);
     return {
       ...habit.toObject(),
       habitRecords: record,
+      streak,
       todayCompleted,
     };
   });
+
   return newHabits;
 };
 
@@ -125,4 +124,23 @@ export const deleteHabitService = async (habitId: string, userId: string) => {
   await habit.deleteOne();
 
   return true;
+};
+
+const calculateStreak = (habitRecord: any[]) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let streak = 0;
+  const current = new Date(today);
+
+  for (const record of habitRecord) {
+    if (formatLocalDate(record.date) === formatLocalDate(current)) {
+      current.setDate(current.getDate() - 1);
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
 };
