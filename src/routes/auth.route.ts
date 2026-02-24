@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   loginGoogleController,
   loginUser,
+  logout,
   me,
   registerUser,
 } from "../controllers/auth.controller";
@@ -16,9 +17,9 @@ const router = Router();
 
 router.post("/register", validate(registerUserSchema), registerUser);
 router.post("/login", validate(loginUserSchema), loginUser);
+router.post("/logout", authMiddleware, logout);
 router.get("/me", authMiddleware, me);
 
 router.post("/google", loginGoogleController);
 
 export default router;
-  

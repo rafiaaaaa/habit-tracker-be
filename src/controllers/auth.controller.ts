@@ -66,3 +66,9 @@ export const loginGoogleController = async (req: Request, res: Response) => {
 
   return res.status(200).json({ success: true, data });
 };
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res.status(200).json({ success: true, data: "Logout successfully" });
+};
