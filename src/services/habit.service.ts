@@ -106,7 +106,10 @@ export const getAllHabitsService = async (userId: string) => {
   const newHabits = habits.map((habit) => {
     const recordMap = new Map(
       habit.habitRecords?.slice(0, 7).map((r) => {
-        const d = new Date(r.date);
+        const d = DateTime.fromJSDate(r.date)
+          .setZone(user.timezone)
+          .startOf("day")
+          .toJSDate();
         d.setHours(0, 0, 0, 0);
         return [formatLocalDate(d), true];
       }) || [],
