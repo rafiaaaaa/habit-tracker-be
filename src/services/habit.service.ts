@@ -1,4 +1,3 @@
-import { format } from "node:path";
 import { PLAN_CONFIG, PlanType } from "../config/plan";
 import Habit, { IHabit } from "../models/Habit";
 import HabitRecord, { IHabitRecord } from "../models/HabitRecord";
@@ -100,7 +99,7 @@ export const getAllHabitsService = async (userId: string) => {
       .toJSDate();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() - i);
-    return formatLocalDate(d);
+    return formatLocalDate(d, user.timezone);
   }).reverse();
 
   const newHabits = habits.map((habit) => {
@@ -111,7 +110,7 @@ export const getAllHabitsService = async (userId: string) => {
           .startOf("day")
           .toJSDate();
         d.setHours(0, 0, 0, 0);
-        return [formatLocalDate(d), true];
+        return [formatLocalDate(d, user.timezone), true];
       }) || [],
     );
 
@@ -119,8 +118,8 @@ export const getAllHabitsService = async (userId: string) => {
       last7Days.map((date) => [date, recordMap.get(date) || false]),
     );
 
-    const todayCompleted = record[formatLocalDate(today)];
-    const streak = calculateStreak(habit.habitRecords || []);
+    const todayCompleted = record[formatLocalDate(today, user.timezone)];
+    const streak = calculateStreak(habit.habitRecords || [], user.timezone);
     return {
       ...habit.toObject(),
       habitRecords: record,
@@ -144,7 +143,7 @@ export const deleteHabitService = async (habitId: string, userId: string) => {
   return true;
 };
 
-const calculateStreak = (habitRecord: any[]) => {
+const calculateStreak = (habitRecord: any[], timezone: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -152,7 +151,10 @@ const calculateStreak = (habitRecord: any[]) => {
   const current = new Date(today);
 
   for (const record of habitRecord) {
-    if (formatLocalDate(record.date) === formatLocalDate(current)) {
+    if (
+      formatLocalDate(record.date, timezone) ===
+      formatLocalDate(current, timezone)
+    ) {
       current.setDate(current.getDate() - 1);
       streak += 1;
     } else {
