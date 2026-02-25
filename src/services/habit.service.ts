@@ -84,33 +84,20 @@ export const getAllHabitsService = async (userId: string) => {
     options: { sort: { date: -1 } },
   });
 
-  const today = DateTime.now()
-    .setZone(user.timezone)
-    .startOf("day")
-    .toUTC()
-    .toJSDate();
-  today.setHours(0, 0, 0, 0);
+  const today = DateTime.now().setZone(user.timezone).startOf("day");
 
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = DateTime.now()
-      .setZone(user.timezone)
-      .startOf("day")
-      .toUTC()
-      .toJSDate();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    return formatLocalDate(d, user.timezone);
-  }).reverse();
+  const last7Days = Array.from({ length: 7 }, (_, i) =>
+    today.minus({ days: 6 - i }).toFormat("yyyy-MM-dd"),
+  );
 
   const newHabits = habits.map((habit) => {
     const recordMap = new Map(
       habit.habitRecords?.slice(0, 7).map((r) => {
-        const d = DateTime.fromJSDate(r.date)
+        const key = DateTime.fromJSDate(r.date)
           .setZone(user.timezone)
-          .startOf("day")
-          .toJSDate();
-        d.setHours(0, 0, 0, 0);
-        return [formatLocalDate(d, user.timezone), true];
+          .toFormat("yyyy-MM-dd");
+
+        return [key, true];
       }) || [],
     );
 
@@ -118,7 +105,7 @@ export const getAllHabitsService = async (userId: string) => {
       last7Days.map((date) => [date, recordMap.get(date) || false]),
     );
 
-    const todayCompleted = record[formatLocalDate(today, user.timezone)];
+    const todayCompleted = record[today.toFormat("yyyy-MM-dd")] || false;
     const streak = calculateStreak(habit.habitRecords || [], user.timezone);
     return {
       ...habit.toObject(),
@@ -144,19 +131,19 @@ export const deleteHabitService = async (habitId: string, userId: string) => {
 };
 
 const calculateStreak = (habitRecord: any[], timezone: string) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = DateTime.now().setZone(timezone).startOf("day");
 
   let streak = 0;
-  const current = new Date(today);
+  let current = today;
 
   for (const record of habitRecord) {
-    if (
-      formatLocalDate(record.date, timezone) ===
-      formatLocalDate(current, timezone)
-    ) {
-      current.setDate(current.getDate() - 1);
-      streak += 1;
+    const recordDate = DateTime.fromJSDate(record.date)
+      .setZone(timezone)
+      .startOf("day");
+
+    if (recordDate.equals(current)) {
+      streak++;
+      current = current.minus({ days: 1 });
     } else {
       break;
     }
