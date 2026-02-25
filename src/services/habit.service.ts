@@ -85,7 +85,11 @@ export const getAllHabitsService = async (userId: string) => {
     options: { sort: { date: -1 } },
   });
 
-  const today = new Date();
+  const today = DateTime.now()
+    .setZone(user.timezone)
+    .startOf("day")
+    .toUTC()
+    .toJSDate();
   today.setHours(0, 0, 0, 0);
 
   const last7Days = Array.from({ length: 7 }, (_, i) => {
