@@ -95,11 +95,16 @@ export const verifySessionService = async (
     throw new AppError("Payment not completed", 400);
   }
 
-  await Subscription.updateOne(
+  await Subscription.findOneAndUpdate(
     { user: userId },
     {
       status: "active",
-      plan: "PRO",
+      plan: "pro",
+    },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
     },
   );
 };
