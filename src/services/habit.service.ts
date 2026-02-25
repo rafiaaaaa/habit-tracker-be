@@ -69,7 +69,14 @@ export async function toggleTodayHabitService(
 }
 
 export const getAllHabitsService = async (userId: string) => {
-  const sevenDaysAgo = new Date();
+  const user = await User.findById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  const sevenDaysAgo = DateTime.now()
+    .setZone(user.timezone)
+    .startOf("day")
+    .toUTC()
+    .toJSDate();
   sevenDaysAgo.setHours(0, 0, 0, 0);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
@@ -82,7 +89,11 @@ export const getAllHabitsService = async (userId: string) => {
   today.setHours(0, 0, 0, 0);
 
   const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
+    const d = DateTime.now()
+      .setZone(user.timezone)
+      .startOf("day")
+      .toUTC()
+      .toJSDate();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() - i);
     return formatLocalDate(d);
