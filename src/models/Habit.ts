@@ -22,7 +22,7 @@ const HabitSchema = new Schema<IHabit>(
     description: { type: String },
     streak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
-    lastCompleted: { type: Date },
+    lastCompleted: { type: Date, default: null },
     frequency: {
       type: String,
       enum: ["DAILY", "WEEKLY", "CUSTOM"],

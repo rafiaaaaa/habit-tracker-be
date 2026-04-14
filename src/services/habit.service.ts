@@ -37,6 +37,7 @@ export async function addHabitService(
 export async function toggleTodayHabitService(
   habitId: string,
   userId: string,
+  type: "mark" | "unmark",
 ): Promise<String> {
   const user = await User.findById(userId);
   if (!user) throw new AppError("User not found", 404);
@@ -50,21 +51,18 @@ export async function toggleTodayHabitService(
     .toUTC()
     .toJSDate();
 
-  const deletedHabit = await HabitRecord.findOneAndDelete({
-    habit: habit._id,
-    date: todayStart,
-  });
-
-  if (deletedHabit) {
-    return "deleted";
+  if (type === "unmark") {
+    console.log("unmark");
+    await unmarkHabit(habit, todayStart);
+  } else {
+    console.log("mark");
+    await markHabit(habit, todayStart);
   }
 
-  await HabitRecord.create({
-    habit: habitId,
-    date: todayStart,
-  });
+  const updatedHabit = await Habit.findById(habitId);
+  if (!updatedHabit) throw new AppError("Habit not found", 404);
 
-  return "created";
+  return await buildHabitResponse(updatedHabit, user.timezone);
 }
 
 export const getAllHabitsService = async (userId: string) => {
@@ -79,43 +77,13 @@ export const getAllHabitsService = async (userId: string) => {
   sevenDaysAgo.setHours(0, 0, 0, 0);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-  const habits = await Habit.find({ user: userId }).populate({
-    path: "habitRecords",
-    options: { sort: { date: -1 } },
-  });
+  const habits = await Habit.find({ user: userId });
 
-  const today = DateTime.now().setZone(user.timezone).startOf("day");
-
-  const last7Days = Array.from({ length: 7 }, (_, i) =>
-    today.minus({ days: 6 - i }).toFormat("yyyy-MM-dd"),
+  const result = await Promise.all(
+    habits.map((habit) => buildHabitResponse(habit, user.timezone)),
   );
 
-  const newHabits = habits.map((habit) => {
-    const recordMap = new Map(
-      habit.habitRecords?.slice(0, 7).map((r) => {
-        const key = DateTime.fromJSDate(r.date)
-          .setZone(user.timezone)
-          .toFormat("yyyy-MM-dd");
-
-        return [key, true];
-      }) || [],
-    );
-
-    const record = Object.fromEntries(
-      last7Days.map((date) => [date, recordMap.get(date) || false]),
-    );
-
-    const todayCompleted = record[today.toFormat("yyyy-MM-dd")] || false;
-    const streak = calculateStreak(habit.habitRecords || [], user.timezone);
-    return {
-      ...habit.toObject(),
-      habitRecords: record,
-      streak,
-      todayCompleted,
-    };
-  });
-
-  return newHabits;
+  return result;
 };
 
 export const deleteHabitService = async (habitId: string, userId: string) => {
@@ -141,6 +109,8 @@ const calculateStreak = (habitRecord: any[], timezone: string) => {
       .setZone(timezone)
       .startOf("day");
 
+    if (recordDate > current) continue; // guard
+
     if (recordDate.equals(current)) {
       streak++;
       current = current.minus({ days: 1 });
@@ -150,4 +120,85 @@ const calculateStreak = (habitRecord: any[], timezone: string) => {
   }
 
   return streak;
+};
+
+const markHabit = async (habit: IHabit, date: Date) => {
+  await HabitRecord.create({
+    habit: habit._id,
+    date,
+  });
+
+  const yesterday = DateTime.fromJSDate(date).minus({ days: 1 }).toJSDate();
+  let streak = habit.streak;
+  if (habit.lastCompleted === yesterday) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+
+  await habit.updateOne(
+    { _id: habit._id },
+    {
+      lastCompleted: date,
+      streak,
+    },
+  );
+};
+
+const unmarkHabit = async (habit: IHabit, date: Date) => {
+  await HabitRecord.findOneAndDelete({
+    habit: habit._id,
+    date,
+  });
+
+  const lastHabitRecord = await HabitRecord.findOne({
+    habit: habit._id,
+    date: { $lt: date },
+  });
+
+  await Habit.updateOne(
+    { _id: habit._id },
+    {
+      lastCompleted: lastHabitRecord?.date ?? null,
+      $inc: { streak: -1 },
+    },
+  );
+};
+
+export const buildHabitResponse = async (habit: IHabit, timezone: string) => {
+  const today = DateTime.now().setZone(timezone).startOf("day");
+  
+  const records = await HabitRecord.find({ habit: habit._id })
+    .sort({ date: -1 })
+    .limit(30);
+
+  const streak = calculateStreak(records, timezone);
+
+  const last7Days = Array.from({ length: 7 }, (_, i) =>
+    today.minus({ days: 6 - i }).toFormat("yyyy-MM-dd"),
+  );
+
+  const recordMap = new Map(
+    records.map((r) => {
+      const key = DateTime.fromJSDate(r.date)
+        .setZone(timezone)
+        .toFormat("yyyy-MM-dd");
+
+      return [key, true];
+    }),
+  );
+
+  const habitRecords = Object.fromEntries(
+    last7Days.map((date) => [date, recordMap.get(date) || false]),
+  );
+
+  const todayKey = today.toFormat("yyyy-MM-dd");
+  const todayCompleted = habitRecords[todayKey] || false;
+
+  return {
+    ...habit.toObject(),
+    habitRecords,
+    streak,
+    todayCompleted,
+  };
 };

@@ -23,11 +23,15 @@ export const toggleHabitController = async (req: Request, res: Response) => {
   const { habitId } = req.params;
   if (!habitId) throw new AppError("Habit id is required", 400);
 
-  const userId = req.user!.id;
-  const status = await toggleTodayHabitService(habitId as string, userId);
-  if (!status) throw new AppError("Something went wrong", 400);
+  const { type } = req.query;
+  if (!type || (type !== "mark" && type !== "unmark"))
+    throw new AppError("Type is required", 400);
 
-  return res.status(200).json({ success: true, data: status });
+  const userId = req.user!.id;
+  const data = await toggleTodayHabitService(habitId as string, userId, type);
+  if (!data) throw new AppError("Something went wrong", 400);
+
+  return res.status(200).json({ success: true, data });
 };
 
 export const getHabitsController = async (req: Request, res: Response) => {
